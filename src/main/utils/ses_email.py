@@ -7,14 +7,13 @@ from .logging import log_message
 def send_email_alert(email_config, page_url, text_diff, links_diff):
     subject = "Url Checker: Some links have changed!"
     charset = "UTF-8"
-    body_text = (
-        "Url Checker checkin-in!\r\n",
-        f"Page has changed: {page_url}\r\n",
-        "Text Diff:\r\n"
-        f"{''.join(text_diff)}\r\n"
-        "Links Diff:\r\n"
-        f"{''.join(links_diff)}"
-    )
+    body_text = (f"""
+        Url Checker checkin-in!\r\n
+        Page has changed: {page_url}\r\n
+        Text Diff:\r\n
+        {''.join(text_diff)}\r\n
+        Links Diff:\r\n
+        {''.join(links_diff)}\r\n""")
 
     aws_session = boto3.session.Session(profile_name=email_config['aws_profile'])
     client = aws_session.client('ses', region_name="eu-west-1")
