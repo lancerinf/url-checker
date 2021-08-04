@@ -1,66 +1,17 @@
+import os
 import time
-import datetime
 import re
 import requests
-from difflib import context_diff
 
 from bs4 import BeautifulSoup
-import boto3
-from botocore.exceptions import ClientError
+from difflib import context_diff
 
-from utils import config_loader
-
+from utils.config_loader import load_config
+from utils.logging import log_message
+from utils.ses_email import send_email_alert
 
 LINKS_CACHE = {}
 TEXT_CACHE = {}
-
-
-def send_email_alert(config, page_url, text_diff, links_diff):
-    email_config = config['email']
-    subject = "Url Checker: Some links have changed!"
-    charset = "UTF-8"
-    body_text = (
-        "Url Checker checkin-in!\r\n",
-        f"Page has changed: {page_url}\r\n",
-        "Text Diff:\r\n"
-        f"{''.join(text_diff)}\r\n"
-        "Links Diff:\r\n"
-        f"{''.join(links_diff)}"
-    )
-
-    aws_session = boto3.session.Session(profile_name=email_config['aws_profile'])
-    client = aws_session.client('ses', region_name="eu-west-1")
-
-    try:
-        response = client.send_email(
-            Destination={
-                'ToAddresses': [
-                    email_config['email_recipient'],
-                ],
-            },
-            Message={
-                'Body': {
-                    'Text': {
-                        'Charset': charset,
-                        'Data': body_text,
-                    },
-                },
-                'Subject': {
-                    'Charset': charset,
-                    'Data': subject,
-                },
-            },
-            Source=email_config['email_sender'],
-        )
-    # Display an error if something goes wrong.
-    except ClientError as e:
-        log_message(e.response['Error']['Message'])
-    else:
-        log_message("Links-alert email sent!")
-
-
-def log_message(msg):
-    print(f"{datetime.datetime.now():%Y-%m-%d %H:%M} - {msg}")
 
 
 def cache_and_diff(cache, key, new_value):
@@ -77,7 +28,7 @@ def clean_from_js(soup):
     [tag.find_parent().decompose() for tag in soup.find_all(string=re.compile("You need JavaScript enabled to view it"))]
 
 
-def check_url(config, page_url):
+def check_url(page_url, email_config):
     response = requests.request("GET", page_url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -95,33 +46,35 @@ def check_url(config, page_url):
 
         if text_diff or text_diff:
             log_message(f"Some text or links have changed! Check: {page_url}")
-            send_email_alert(config, page_url, text_diff, links_diff)
-        else:
-            # log_message("No text or links have changed since last visit.")
-            pass
+            if email_config['alert_enabled'] is True:
+                send_email_alert(email_config, page_url, text_diff, links_diff)
     else:
         log_message(f"Error fetching URL: {page_url}")
 
 
-def loop_through(config):
-    for url in config['page_urls']:
-        check_url(config, url)
+def loop_through(url_checker_config, email_config):
+    for url in url_checker_config['page_urls']:
+        check_url(url, email_config)
 
 
-def startup_msg(config):
-    print(f"Link-checker: I'll be checking for new links at these URLs every {config['check_frequency_seconds']} seconds:")
-    for page in config['page_urls']:
-        print(page)
+def startup_msg(url_checker_config):
+    log_message('Url Checker: Starting up!')
+    log_message(f"Checking for new links at these URLs every {url_checker_config['check_frequency_seconds']} seconds:")
+    for page in url_checker_config['page_urls']:
+        log_message(page)
 
 
 def main():
-    config = config_loader.load_config("config.yaml")
-    startup_msg(config)
+    config = load_config(os.path.join(os.path.dirname(__file__), 'resources/config/config.yaml'))
+    url_checker_config = config['url_checker']
+    email_config = config['email']
+
+    startup_msg(url_checker_config)
 
     try:
         while True:
-            loop_through(config)
-            time.sleep(config['check_frequency_seconds'])
+            loop_through(url_checker_config, email_config)
+            time.sleep(url_checker_config['check_frequency_seconds'])
     except KeyboardInterrupt:
         log_message('Exiting!')
 

@@ -1,4 +1,5 @@
 import yaml
+import os
 
 
 def load_config(config_path):
@@ -7,7 +8,7 @@ def load_config(config_path):
 
 
 def main():
-    config = load_config("../config.yaml")
+    config = load_config(os.path.join(os.path.dirname(__file__), '../resources/config/config.yaml'))
     print(config)
 
 

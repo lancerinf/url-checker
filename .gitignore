@@ -1,4 +1,7 @@
-url-checker.iml
+__pycache__/
+
 .venv/
 .idea/
-src/actual_config.yaml
+
+url-checker.iml
+src/main/resources/config/fede_config.yaml
