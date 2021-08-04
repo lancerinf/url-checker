@@ -1,0 +1,8 @@
+check_frequency_seconds: 300 # 5 minutes
+page_urls:
+    -   "https://your-desired-url"
+
+email:
+    aws_profile: "your-aws-profile" # aws-profile
+    email_sender: "Url Checker <email@example.com>" # an AWS SES validated email
+    email_recipient: "your-email@example.com"
