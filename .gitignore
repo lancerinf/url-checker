@@ -2,6 +2,7 @@ __pycache__/
 
 .venv/
 .idea/
-
 url-checker.iml
+
+logs/
 src/main/resources/config/fede_config.yaml
