@@ -7,7 +7,7 @@ import logging
 def send_email_through_aws_ses(email_config, diff_message):
     subject = "Url Checker: Some links have changed!"
     charset = "UTF-8"
-    body_text = diff_message
+    body_html = diff_message
 
     aws_session = boto3.session.Session(profile_name=email_config['aws_profile'])
     client = aws_session.client('ses', region_name="eu-west-1")
@@ -21,9 +21,9 @@ def send_email_through_aws_ses(email_config, diff_message):
             },
             Message={
                 'Body': {
-                    'Text': {
+                    'Html': {
                         'Charset': charset,
-                        'Data': body_text,
+                        'Data': body_html,
                     },
                 },
                 'Subject': {

@@ -10,7 +10,7 @@ from difflib import context_diff
 from utils.config_loader import load_config
 from utils.logging import init_logger
 from utils.email_alert import send_email_through_aws_ses
-from utils.string_formatting import format_diff
+from utils.string_formatting import format_diff,format_diff_html
 
 LINKS_CACHE = {}
 TEXT_CACHE = {}
@@ -48,9 +48,10 @@ def check_url(page_url, email_config):
 
         if text_diff or links_diff:
             diff_message = format_diff(page_url, text_diff, links_diff)
+            diff_message_html = format_diff_html(page_url, text_diff, links_diff)
             logging.info(f"{diff_message}")
             if email_config['alert_enabled'] is True:
-                send_email_through_aws_ses(email_config, diff_message)
+                send_email_through_aws_ses(email_config, diff_message_html)
     else:
         logging.warning(f"Error fetching URL: {page_url}")
 
